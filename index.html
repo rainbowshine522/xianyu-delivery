@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>资源领取中心</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.container {
+  background: #fff; border-radius: 20px; padding: 40px 30px;
+  max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  text-align: center;
+}
+.icon-wrap {
+  width: 72px; height: 72px; margin: 0 auto 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 36px; color: #fff;
+}
+h1 { font-size: 22px; color: #333; margin-bottom: 8px; }
+.subtitle { font-size: 14px; color: #999; margin-bottom: 30px; }
+.input-group { margin-bottom: 20px; text-align: left; }
+.input-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+.input-group input {
+  width: 100%; padding: 14px 16px; border: 2px solid #e0e0e0;
+  border-radius: 12px; font-size: 16px; transition: border-color 0.3s;
+}
+.input-group input:focus { outline: none; border-color: #667eea; }
+.btn {
+  width: 100%; padding: 15px; border: none; border-radius: 12px;
+  font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+}
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.result {
+  margin-top: 25px; padding: 20px; border-radius: 12px;
+  display: none; text-align: left;
+}
+.result.success { background: #f0fdf4; border: 1px solid #bbf7d0; display: block; }
+.result.error { background: #fef2f2; border: 1px solid #fecaca; display: block; }
+.result h3 { font-size: 16px; margin-bottom: 10px; }
+.result.success h3 { color: #15803d; }
+.result.error h3 { color: #dc2626; }
+.result p { font-size: 14px; color: #555; line-height: 1.6; word-break: break-all; }
+.result .link-box {
+  margin-top: 12px; padding: 12px; background: #fff; border-radius: 8px;
+  border: 1px dashed #ccc; font-size: 14px; color: #667eea;
+  word-break: break-all; cursor: pointer;
+}
+.result .link-box:hover { background: #f5f3ff; }
+.result .copy-btn {
+  margin-top: 10px; padding: 8px 20px; background: #667eea; color: #fff;
+  border: none; border-radius: 8px; font-size: 13px; cursor: pointer;
+}
+.result .open-btn {
+  margin-top: 10px; margin-left: 8px; padding: 8px 20px; background: #15803d; color: #fff;
+  border: none; border-radius: 8px; font-size: 13px; cursor: pointer;
+}
+.tips { margin-top: 20px; font-size: 12px; color: #bbb; line-height: 1.8; }
+.loading { display: none; text-align: center; padding: 20px; }
+.loading.show { display: block; }
+.spinner {
+  width: 40px; height: 40px; border: 4px solid #e0e0e0;
+  border-top-color: #667eea; border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin: 0 auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="icon-wrap">📦</div>
+  <h1>资源领取中心</h1>
+  <p class="subtitle">自动获取您的资源链接</p>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p style="color:#666;font-size:14px;">正在获取资源...</p>
+  </div>
+
+  <div id="main-content" style="display:none;">
+    <div class="input-group">
+      <label>提取码</label>
+      <input type="text" id="code" placeholder="请输入提取码" maxlength="20">
+    </div>
+    <button class="btn btn-primary" onclick="fetchLink()" id="fetchBtn">获取资源链接</button>
+  </div>
+
+  <div id="result" class="result"></div>
+
+  <div class="tips">
+    <p>如无法获取，请联系卖家客服</p>
+    <p>链接永久有效，可随时下载</p>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+function fetchLink() {
+  var code = document.getElementById('code').value.trim();
+  var resultDiv = document.getElementById('result');
+
+  if (!code) {
+    resultDiv.className = 'result error';
+    resultDiv.innerHTML = '<h3>请输入提取码</h3><p>请输入您收到的提取码</p>';
+    return;
+  }
+
+  lookupCode(code);
+}
+
+function lookupCode(code) {
+  var resultDiv = document.getElementById('result');
+
+  var item = window.DELIVERY_DATA ? window.DELIVERY_DATA[code] : null;
+
+  if (item && item.link) {
+    var link = item.link;
+    var title = item.title || '您的资源';
+    var password = item.password || '';
+    var isPlaceholder = link.indexOf('placeholder') >= 0;
+
+    if (isPlaceholder) {
+      resultDiv.className = 'result error';
+      resultDiv.innerHTML = '<h3>资源正在准备中</h3><p>卖家正在上传资源，请稍后再试或联系卖家客服</p>';
+    } else {
+      var pwHtml = password ? '<p style="margin-top:10px;font-size:12px;color:#888;">提取码：' + password + '</p>' : '';
+      resultDiv.className = 'result success';
+      resultDiv.innerHTML =
+        '<h3>获取成功！</h3>' +
+        '<p>' + title + '</p>' +
+        '<div class="link-box" onclick="copyText(this)">' + link + '</div>' +
+        '<button class="copy-btn" onclick="copyLink('' + link.replace(/'/g, "\'") + '')">复制链接</button>' +
+        '<button class="open-btn" onclick="window.open('' + link.replace(/'/g, "\'") + '', \'_blank\')">打开网盘</button>' +
+        pwHtml;
+    }
+  } else {
+    resultDiv.className = 'result error';
+    resultDiv.innerHTML = '<h3>未找到资源</h3><p>提取码无效，请检查后重试或联系卖家</p>';
+  }
+}
+
+function copyLink(link) {
+  navigator.clipboard.writeText(link).then(function() {
+    alert('链接已复制到剪贴板！');
+  });
+}
+
+function copyText(el) {
+  var text = el.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    alert('已复制：' + text);
+  });
+}
+
+document.getElementById('code').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') fetchLink();
+});
+
+// URL参数自动提取code
+window.addEventListener('DOMContentLoaded', function() {
+  var params = new URLSearchParams(window.location.search);
+  var urlCode = params.get('code');
+  if (urlCode) {
+    document.getElementById('code').value = urlCode;
+    document.getElementById('loading').classList.add('show');
+    setTimeout(function() {
+      document.getElementById('loading').classList.remove('show');
+      document.getElementById('main-content').style.display = 'block';
+      lookupCode(urlCode);
+    }, 500);
+  } else {
+    document.getElementById('main-content').style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>
